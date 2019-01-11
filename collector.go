@@ -64,7 +64,7 @@ func (u *UDPCollector) connect() {
 		if c, err := net.Dial("udp", u.Addr); err == nil {
 			u.wg.Add(1)
 			go u.SendLoop(c)
-			continue
+			return
 		}
 		time.Sleep(time.Second)
 	}
