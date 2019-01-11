@@ -2,7 +2,6 @@ package xray
 
 import (
 	"errors"
-	"fmt"
 	"net"
 	"sync"
 	"sync/atomic"
@@ -86,8 +85,6 @@ func (u *UDPCollector) SendLoop(c net.Conn) {
 				go u.connect()
 				return
 			}
-
-			fmt.Printf("%s\n", string(b))
 		case <-u.stopch:
 			return
 		}
