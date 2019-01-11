@@ -160,6 +160,8 @@ func (sp *Span) Encode() ([]byte, error) {
 				sg.Throttle = true
 			} else if state%100 == 5 {
 				sg.Fault = true
+			} else if state%100 == 4 {
+				sg.Error = true
 			}
 		case "http.url":
 			if u, ok := value.(string); ok {
