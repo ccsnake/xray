@@ -2,10 +2,10 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/ccsnake/xray"
 	"github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
 	"net"
 	"net/http"
 	"time"
@@ -46,7 +46,7 @@ func httptest() {
 	}
 	http.HandleFunc("/test", func(rw http.ResponseWriter, r *http.Request) {
 		var sp opentracing.Span
-		opName := "handle-" + r.URL.Path
+		opName := r.URL.Path
 		// Attempt to join a trace by getting trace context from the headers.
 		wireContext, err := opentracing.GlobalTracer().Extract(
 			opentracing.TextMap,
@@ -62,10 +62,6 @@ func httptest() {
 		sp.LogKV("meta", "bla")
 
 		fmt.Fprint(rw, "ok!")
-
-		b, _ := json.Marshal(sp)
-		fmt.Printf("span %s\n", string(b))
-
 	})
 	go http.Serve(ln, nil)
 }
@@ -89,6 +85,8 @@ func call(ctx context.Context, addr string) error {
 
 	if resp, err := cli.Do(req); err != nil {
 		sp.SetTag("error", err.Error())
+		ext.Error.Set(sp, true)
+		fmt.Println("err", err)
 		return err
 	} else {
 		sp.SetTag("http.code", resp.StatusCode)

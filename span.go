@@ -140,7 +140,7 @@ func (sp *Span) Encode() ([]byte, error) {
 		Service:     sp.tracer.serviceName,
 		Annotations: sp.Annotations,
 		MetaData:    sp.MetaData,
-		Namespace:   "remote",
+		// Namespace:   "remote",
 	}
 
 	var hi httpInfo
