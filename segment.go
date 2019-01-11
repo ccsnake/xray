@@ -19,12 +19,11 @@ var (
 )
 
 type Segment struct {
-	Name       string  `json:"name"`
-	ID         string  `json:"id"`
-	StartTime  float64 `json:"start_time"`
-	EndTime    float64 `json:"end_time,omitempty"`
-	InProgress bool    `json:"in_progress"`
-
+	Name        string                 `json:"name"`
+	ID          string                 `json:"id"`
+	StartTime   float64                `json:"start_time"`
+	EndTime     float64                `json:"end_time,omitempty"`
+	InProgress  bool                   `json:"in_progress,omitempty"`
 	TraceID     string                 `json:"trace_id"`
 	Type        string                 `json:"type,omitempty"`
 	ParentID    string                 `json:"parent_id,omitempty"`
@@ -32,6 +31,10 @@ type Segment struct {
 	Namespace   string                 `json:"namespace,omitempty"` // must be remote
 	MetaData    map[string]interface{} `json:"meta_data,omitempty"`
 	Annotations map[string]interface{} `json:"annotations,omitempty"`
+	Http        *httpInfo              `json:"http,omitempty"`
+	Error       bool                   `json:"error,omitempty"`
+	Throttle    bool                   `json:"throttle,omitempty"`
+	Fault       bool                   `json:"fault,omitempty"`
 }
 
 func fixSegmentName(name string) string {
@@ -47,4 +50,13 @@ func fixSegmentName(name string) string {
 	}
 
 	return name
+}
+
+type httpInfo struct {
+	Method   string `json:"method,omitempty"`
+	URL      string `json:"url,omitempty"`
+	Response struct {
+		Status        int `json:"status,omitempty"`
+		ContentLength int `json:"content_length,omitempty"`
+	} `json:"response,omitempty"`
 }

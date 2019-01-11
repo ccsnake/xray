@@ -3,7 +3,6 @@ package xray
 import (
 	"bytes"
 	"github.com/opentracing/opentracing-go"
-	"net/http"
 	"strings"
 )
 
@@ -30,7 +29,7 @@ type SpanContext struct {
 	TraceID string
 
 	// The SpanID of this Context's parent, or nil if there is no parent.
-	ParentSpanID string
+	ParentID string
 
 	SamplingDecision string
 
@@ -38,36 +37,28 @@ type SpanContext struct {
 	SpanID string
 
 	// The span's associated baggage.
-	Baggage map[string]string // initialized on first use
+	AdditionalData map[string]string // initialized on first use
 }
 
+// ForeachBaggageItem xray not support baggage item
 func (sc *SpanContext) ForeachBaggageItem(handler func(k, v string) bool) {
-	if sc.Baggage == nil {
-		return
-	}
-
-	for key, value := range sc.Baggage {
-		handler(key, value)
-	}
+	return
 }
 
-func (sc *SpanContext) String() string {
+
+func (sc *SpanContext) Inject(h opentracing.TextMapWriter) {
 	var p [][]byte
 	if sc.TraceID != "" {
 		p = append(p, []byte(RootPrefix+sc.TraceID))
 	}
-	if sc.ParentSpanID != "" {
-		p = append(p, []byte(ParentPrefix+sc.ParentSpanID))
+	if sc.ParentID != "" {
+		p = append(p, []byte(ParentPrefix+sc.SpanID))
 	}
 	p = append(p, []byte(sc.SamplingDecision))
-	for key := range sc.Baggage {
-		p = append(p, []byte(key+"="+sc.Baggage[key]))
+	for key := range sc.AdditionalData {
+		p = append(p, []byte(key+"="+sc.AdditionalData[key]))
 	}
-	return string(bytes.Join(p, []byte(";")))
-}
-
-func (sc *SpanContext) Inject(h http.Header) {
-	h.Set("X-Amzn-Trace-Id", sc.String())
+	h.Set("X-Amzn-Trace-Id", string(bytes.Join(p, []byte(";"))))
 }
 
 func Extract(s string) (*SpanContext, error) {
@@ -76,7 +67,7 @@ func Extract(s string) (*SpanContext, error) {
 	}
 	ret := &SpanContext{
 		SamplingDecision: "unknown",
-		Baggage:   make(map[string]string),
+		AdditionalData:   make(map[string]string),
 	}
 	parts := strings.Split(s, ";")
 	for i := range parts {
@@ -86,20 +77,20 @@ func Extract(s string) (*SpanContext, error) {
 			if strings.HasPrefix(p, RootPrefix) {
 				ret.TraceID = value
 			} else if strings.HasPrefix(p, ParentPrefix) {
-				ret.ParentSpanID = value
+				ret.SpanID = value
 			} else if strings.HasPrefix(p, SampledPrefix) {
 				ret.SamplingDecision = p
 			} else if !strings.HasPrefix(p, SelfPrefix) {
 				key, valid := keyFromKeyValuePair(p)
 				if valid {
-					ret.Baggage[key] = value
+					ret.AdditionalData[key] = value
 				}
 			}
 		}
 	}
-	return ret,nil
-}
 
+	return ret, nil
+}
 
 func keyFromKeyValuePair(s string) (string, bool) {
 	e := strings.Index(s, "=")
@@ -116,4 +107,3 @@ func valueFromKeyValuePair(s string) (string, bool) {
 	}
 	return "", false
 }
-

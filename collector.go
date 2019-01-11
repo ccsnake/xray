@@ -2,6 +2,7 @@ package xray
 
 import (
 	"errors"
+	"fmt"
 	"net"
 	"sync"
 	"sync/atomic"
@@ -9,6 +10,7 @@ import (
 )
 
 var ErrBufferFull = errors.New("send buffer is full")
+var Header = []byte(`{"format": "json", "version": 1}` + "\n")
 
 type UDPCollector struct {
 	Addr   string
@@ -52,7 +54,7 @@ func (u *UDPCollector) Stop() {
 }
 
 func (u *UDPCollector) connect() {
-	u.wg.Done()
+	u.wg.Wait()
 	for atomic.LoadInt32(&u.stop) == 0 {
 		if c, err := net.Dial("udp", u.Addr); err == nil {
 			u.wg.Add(1)
@@ -75,10 +77,12 @@ func (u *UDPCollector) SendLoop(c net.Conn) {
 	for atomic.LoadInt32(&u.stop) == 0 {
 		select {
 		case b := <-u.spans:
-			if _, err := c.Write(b); err != nil {
+			if _, err := c.Write(append(Header, b...)); err != nil {
 				go u.connect()
 				return
 			}
+
+			fmt.Printf("%s\n", string(b))
 		case <-u.stopch:
 			return
 		}

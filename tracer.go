@@ -48,26 +48,29 @@ func (t *Tracer) StartSpan(operationName string, opts ...opentracing.StartSpanOp
 
 	now := time.Now()
 	sp := &Span{
-		Name:       operationName,
-		ID:         NewSegmentID(),
-		StartTime:  float64(now.UnixNano()) / float64(time.Second),
-		TraceID:    NewTraceID(),
-		start:      now,
-		tracer:     t,
+		Name:      operationName,
+		ID:        NewSegmentID(),
+		StartTime: float64(now.UnixNano()) / float64(time.Second),
+		TraceID:   NewTraceID(),
+		start:     now,
+		tracer:    t,
 	}
 
 	for _, ref := range option.References {
 		switch ref.Type {
-		case opentracing.ChildOfRef, opentracing.FollowsFromRef:
+		case opentracing.ChildOfRef:
 			sc, ok := ref.ReferencedContext.(*SpanContext)
 			if !ok {
 				continue
 			}
 
-			if len(sc.ParentSpanID) == 0 {
-				sp.ParentSpanID = sc.ParentSpanID
+			sp.TraceID = sc.TraceID
+			if len(sc.SpanID) > 0 {
+				sp.ParentSpanID = sc.SpanID
 				sp.Type = "subsegment"
 			}
+		case opentracing.FollowsFromRef:
+			fmt.Println("bingo....")
 		default:
 		}
 	}

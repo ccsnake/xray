@@ -11,7 +11,7 @@ type textPropagator struct {
 }
 
 func (t *textPropagator) Inject(sc *SpanContext, carrier opentracing.TextMapWriter) {
-	carrier.Set(AMZHeader, sc.String())
+	sc.Inject(carrier)
 }
 
 func (t *textPropagator) Extract(carrier opentracing.TextMapReader) (sc opentracing.SpanContext, err error) {

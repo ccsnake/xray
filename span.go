@@ -2,6 +2,7 @@ package xray
 
 import (
 	"encoding/json"
+	"github.com/alipay/sofa-mosn/pkg/protocol/http"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/log"
 	"sync"
@@ -56,7 +57,7 @@ func (sp *Span) Context() opentracing.SpanContext {
 	// todo add ann & metadata
 	return &SpanContext{
 		TraceID:          sp.TraceID,
-		ParentSpanID:     sp.ParentSpanID,
+		ParentID:         sp.ParentSpanID,
 		SamplingDecision: sp.SamplingDecision,
 		SpanID:           sp.ID,
 	}
@@ -90,7 +91,7 @@ func (sp *Span) LogFields(fields ...log.Field) {
 	}
 
 	for _, f := range fields {
-		sp.MetaData[f.Key()] = f
+		sp.MetaData[f.Key()] = f.Value()
 	}
 }
 
@@ -129,7 +130,7 @@ func (sp *Span) Log(data opentracing.LogData) {
 func (sp *Span) Encode() ([]byte, error) {
 	sp.mu.Lock()
 	sg := Segment{
-		Name:        sp.Name,
+		Name:        fixSegmentName(sp.Name),
 		ID:          sp.ID,
 		StartTime:   sp.StartTime,
 		EndTime:     sp.EndTime,
@@ -140,6 +141,37 @@ func (sp *Span) Encode() ([]byte, error) {
 		Annotations: sp.Annotations,
 		MetaData:    sp.MetaData,
 		Namespace:   "remote",
+	}
+
+	var hi httpInfo
+	for key, value := range sp.Annotations {
+		switch key {
+		case "http.method":
+			if method, ok := value.(string); ok {
+				hi.Method = method
+			}
+			sg.Http = &hi
+		case "http.status_code":
+			state, ok := value.(int)
+			if ok {
+				hi.Response.Status = state
+			}
+			sg.Http = &hi
+			if state == http.TooManyRequests {
+				sg.Throttle = true
+			} else if state%100 == 5 {
+				sg.Fault = true
+			}
+		case "http.url":
+			if u, ok := value.(string); ok {
+				hi.URL = u
+			}
+			sg.Http = &hi
+		case "error":
+			if err, ok := value.(bool); ok {
+				sg.Error = err
+			}
+		}
 	}
 	sp.mu.Unlock()
 
