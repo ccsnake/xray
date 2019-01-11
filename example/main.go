@@ -12,7 +12,9 @@ import (
 )
 
 func main() {
-	tracer := xray.NewTracer(":2000", "app1")
+	co:= xray.NewUDPCollector(":2000")
+
+	tracer := xray.NewTracer(co, "app1")
 	opentracing.SetGlobalTracer(tracer)
 
 	go httptest()

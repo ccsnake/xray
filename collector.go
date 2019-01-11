@@ -53,6 +53,11 @@ func (u *UDPCollector) Stop() {
 	}
 }
 
+func (u *UDPCollector) Close() error {
+	u.Stop()
+	return nil
+}
+
 func (u *UDPCollector) connect() {
 	u.wg.Wait()
 	for atomic.LoadInt32(&u.stop) == 0 {
