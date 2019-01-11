@@ -2,7 +2,6 @@ package xray
 
 import (
 	"encoding/json"
-	"github.com/alipay/sofa-mosn/pkg/protocol/http"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/log"
 	"sync"
@@ -157,7 +156,7 @@ func (sp *Span) Encode() ([]byte, error) {
 				hi.Response.Status = state
 			}
 			sg.Http = &hi
-			if state == http.TooManyRequests {
+			if state == 429 {
 				sg.Throttle = true
 			} else if state%100 == 5 {
 				sg.Fault = true
