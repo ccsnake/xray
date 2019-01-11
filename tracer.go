@@ -114,7 +114,7 @@ func (t *Tracer) finish(sp *Span) {
 	t.collector.Send(sp)
 }
 
-func NewTracer(addr string, serviceName string) *Tracer {
+func NewTracer(addr string, serviceName string) opentracing.Tracer {
 	return &Tracer{
 		collector:   NewUDPCollector(addr),
 		serviceName: serviceName,
