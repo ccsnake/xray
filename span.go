@@ -171,12 +171,15 @@ func (sp *Span) Encode() ([]byte, error) {
 				hi.URL = u
 			}
 			sg.Http = &hi
-		case "error":
-			if err, ok := value.(bool); ok {
-				sg.Error = err
-			}
 		}
 	}
+
+	if val, ok := sp.Annotations["error"]; ok && !sg.Throttle && !sg.Fault {
+		if err, ok := val.(bool); ok {
+			sg.Error = err
+		}
+	}
+
 	sp.mu.Unlock()
 
 	return json.Marshal(sg)
