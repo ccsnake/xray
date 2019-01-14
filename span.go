@@ -118,12 +118,15 @@ func (sp *Span) Tracer() opentracing.Tracer {
 }
 
 func (sp *Span) LogEvent(event string) {
+	sp.LogFields(log.Bool("event."+event, true))
 }
 
 func (sp *Span) LogEventWithPayload(event string, payload interface{}) {
+	sp.LogFields(log.Object("event."+event, payload))
 }
 
 func (sp *Span) Log(data opentracing.LogData) {
+	sp.LogFields(log.Object("event."+data.Event, data.Payload))
 }
 
 func (sp *Span) Encode() ([]byte, error) {
