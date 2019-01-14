@@ -174,9 +174,11 @@ func (sp *Span) Encode() ([]byte, error) {
 		}
 	}
 
-	if val, ok := sp.Annotations["error"]; ok && !sg.Throttle && !sg.Fault {
-		if err, ok := val.(bool); ok {
-			sg.Error = err
+	if sp.Annotations != nil {
+		if val, ok := sp.Annotations["error"]; ok && !sg.Throttle && !sg.Fault {
+			if err, ok := val.(bool); ok {
+				sg.Error = err
+			}
 		}
 	}
 
