@@ -52,13 +52,14 @@ func (sp *Span) FinishWithOptions(opts opentracing.FinishOptions) {
 func (sp *Span) Context() opentracing.SpanContext {
 	sp.mu.RLock()
 	defer sp.mu.RUnlock()
-
+	
 	// todo add ann & metadata
 	return &SpanContext{
 		TraceID:          sp.TraceID,
 		ParentID:         sp.ParentSpanID,
 		SamplingDecision: sp.SamplingDecision,
 		SpanID:           sp.ID,
+		AdditionalData:   nil,
 	}
 }
 
@@ -161,9 +162,9 @@ func (sp *Span) Encode() ([]byte, error) {
 			sg.Http = &hi
 			if state == 429 {
 				sg.Throttle = true
-			} else if state%100 == 5 {
+			} else if state/100 == 5 {
 				sg.Fault = true
-			} else if state%100 == 4 {
+			} else if state/100 == 4 {
 				sg.Error = true
 			}
 		case "http.url":
@@ -171,6 +172,11 @@ func (sp *Span) Encode() ([]byte, error) {
 				hi.URL = u
 			}
 			sg.Http = &hi
+		case "error":
+			if u, ok := value.(string); ok {
+				hi.URL = u
+			}
+			sg.Error = true
 		}
 	}
 
